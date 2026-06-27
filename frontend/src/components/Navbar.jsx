@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingBag, Heart, Sun, Moon, Menu, X, Crown, LogOut, Settings, Package } from 'lucide-react'
+import { ShoppingBag, Heart, Sun, Moon, Menu, X, Crown, LogOut, Settings, Package, ChevronDown } from 'lucide-react'
 import { toggleTheme, toggleCart, toggleMobileMenu, closeMobileMenu } from '../store/slices/uiSlice'
 import { logout } from '../store/slices/authSlice'
 import { selectCartTotal } from '../store/slices/cartSlice'
@@ -156,6 +156,16 @@ export default function Navbar() {
                   }`}>
                     {user.name?.split(' ')[0]}
                   </span>
+                  <ChevronDown
+                    size={13}
+                    className={`hidden sm:block flex-shrink-0 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''} ${
+                      scrolled
+                        ? 'text-gray-500 dark:text-gray-400'
+                        : theme === 'dark'
+                          ? 'text-white/70'
+                          : 'text-gray-600'
+                    }`}
+                  />
                 </button>
 
                 <AnimatePresence>
