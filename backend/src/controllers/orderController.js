@@ -97,9 +97,10 @@ const createOrder = asyncHandler(async (req, res) => {
   let clientSecret = null;
   if (paymentMethod === 'stripe') {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalPrice * 100), // in paisa/cents
-      currency: 'pkr',
+      amount: Math.round(totalPrice), // PKR has no sub-unit, amount in rupees directly
+      currency: 'usd', // using usd for Stripe test compatibility (1 USD ~ symbolic)
       metadata: { orderId: order._id.toString(), userId: req.user.id.toString() },
+      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
     });
     order.stripePaymentIntentId = paymentIntent.id;
     await order.save();
