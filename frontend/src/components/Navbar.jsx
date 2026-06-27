@@ -38,10 +38,15 @@ export default function Navbar() {
     navigate('/')
   }
 
-  /* text color helper based on scroll + theme */
+  /* text color helper based on scroll + theme
+     - scrolled: always use explicit light/dark classes
+     - not scrolled + dark theme: white text (header is transparent over dark hero)
+     - not scrolled + light theme: dark text (header is transparent over light bg) */
   const iconCls = scrolled
     ? 'text-gray-700 dark:text-gray-300 hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-white/10'
-    : 'text-white hover:text-primary-300 hover:bg-white/10'
+    : theme === 'dark'
+      ? 'text-white hover:text-primary-300 hover:bg-white/10'
+      : 'text-gray-800 hover:text-primary-600 hover:bg-black/5'
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -58,7 +63,11 @@ export default function Navbar() {
               <Crown size={16} className="text-white" />
             </div>
             <span className={`font-display text-xl font-semibold tracking-wide transition-colors ${
-              scrolled ? 'text-gray-900 dark:text-white' : 'text-white'
+              scrolled
+                ? 'text-gray-900 dark:text-white'
+                : theme === 'dark'
+                  ? 'text-white'
+                  : 'text-gray-900'
             }`}>
               Shah<span className="gradient-text">Verse</span>
             </span>
@@ -75,9 +84,13 @@ export default function Navbar() {
                     ? location.pathname === to
                       ? 'text-primary-500 bg-primary-50 dark:bg-primary-500/10'
                       : 'text-gray-600 dark:text-gray-300 hover:text-primary-500 hover:bg-gray-50 dark:hover:bg-white/5'
-                    : location.pathname === to
-                      ? 'text-primary-300 bg-white/10'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                    : theme === 'dark'
+                      ? location.pathname === to
+                        ? 'text-primary-300 bg-white/10'
+                        : 'text-white/90 hover:text-white hover:bg-white/10'
+                      : location.pathname === to
+                        ? 'text-primary-600 bg-black/5'
+                        : 'text-gray-800 hover:text-gray-900 hover:bg-black/5'
                 }`}
               >
                 {label}
@@ -135,7 +148,11 @@ export default function Navbar() {
                     {user.name?.charAt(0).toUpperCase()}
                   </div>
                   <span className={`text-sm font-medium hidden sm:block max-w-20 truncate transition-colors ${
-                    scrolled ? 'text-gray-700 dark:text-gray-200' : 'text-white'
+                    scrolled
+                      ? 'text-gray-700 dark:text-gray-200'
+                      : theme === 'dark'
+                        ? 'text-white'
+                        : 'text-gray-800'
                   }`}>
                     {user.name?.split(' ')[0]}
                   </span>

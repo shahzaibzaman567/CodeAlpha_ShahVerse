@@ -13,6 +13,7 @@ export default function ProductCard({ product, index = 0 }) {
   const [wishListed, setWishListed] = useState(
     user?.wishlist?.includes(product._id)
   )
+  const [wishlistLoading, setWishlistLoading] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
 
   const handleAddToCart = (e) => {
@@ -22,13 +23,20 @@ export default function ProductCard({ product, index = 0 }) {
 
   const handleWishlist = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     if (!user) { toast.error('Please login to add to wishlist'); return }
+    if (wishlistLoading) return
+    setWishlistLoading(true)
     try {
       await api.put(`/users/wishlist/${product._id}`)
-      setWishListed(!wishListed)
-      toast.success(wishListed ? 'Removed from wishlist' : 'Added to wishlist')
+      setWishListed((prev) => {
+        toast.success(prev ? 'Removed from wishlist' : 'Added to wishlist')
+        return !prev
+      })
     } catch {
       toast.error('Failed to update wishlist')
+    } finally {
+      setWishlistLoading(false)
     }
   }
 

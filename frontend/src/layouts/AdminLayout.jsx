@@ -94,6 +94,17 @@ export default function AdminLayout() {
           <LogOut size={18} className="flex-shrink-0" />
           {(sidebarOpen || onClose) && <span className="text-sm">Logout</span>}
         </button>
+        {/* Sidebar collapse/expand toggle — only on desktop (no onClose) */}
+        {!onClose && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center gap-3 px-3 py-2 mt-1 w-full rounded-xl text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-all duration-200"
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            <ChevronRight size={18} className={`flex-shrink-0 transition-transform duration-200 ${sidebarOpen ? 'rotate-180' : ''}`} />
+            {sidebarOpen && <span className="text-sm">Collapse</span>}
+          </button>
+        )}
       </div>
     </>
   )
@@ -132,14 +143,6 @@ export default function AdminLayout() {
         className="relative hidden lg:flex flex-col bg-charcoal-900 border-r border-white/5 flex-shrink-0 min-h-screen overflow-hidden"
       >
         <SidebarContent onClose={null} />
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-primary-500 hover:bg-primary-400 rounded-full flex items-center justify-center text-white shadow-gold transition-colors z-10"
-        >
-          <ChevronRight size={12} className={`transition-transform duration-200 ${sidebarOpen ? 'rotate-180' : ''}`} />
-        </button>
       </motion.aside>
 
       {/* Main content */}

@@ -39,7 +39,10 @@ function OrderModal({ order, onClose, onStatusChange }) {
       onStatusChange(order._id, newStatus)
       toast.success(`Status updated to "${newStatus}"`)
       onClose()
-    } catch { toast.error('Failed to update status') }
+    } catch (err) {
+      console.error('handleUpdate error:', err?.response?.status, err?.response?.data)
+      toast.error(err?.response?.data?.message || 'Failed to update status')
+    }
     finally { setUpdating(false) }
   }
 
@@ -192,10 +195,11 @@ export default function AdminOrders() {
     try {
       await api.put(`/orders/${orderId}/status`, { status: newStatus })
       toast.success(`Status → ${newStatus}`)
-    } catch {
+    } catch (err) {
       // Rollback on failure
+      console.error('quickUpdate error:', err?.response?.status, err?.response?.data)
       setOrders(prev => prev.map(o => o._id === orderId ? { ...o, orderStatus: currentStatus } : o))
-      toast.error('Failed to update status')
+      toast.error(err?.response?.data?.message || 'Failed to update status')
     }
   }
 

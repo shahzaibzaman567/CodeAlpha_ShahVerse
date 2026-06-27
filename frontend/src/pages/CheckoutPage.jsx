@@ -3,15 +3,60 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CreditCard, MapPin, Package, ChevronRight, Lock } from 'lucide-react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { selectCartTotal, clearCart } from '../store/slices/cartSlice'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
 
+// Load Stripe outside component to avoid re-creating on every render
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+
 const steps = ['Address', 'Payment', 'Review']
 
-export default function CheckoutPage() {
+// Card element styling that matches the app theme
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '15px',
+      color: '#1a1a2e',
+      fontFamily: '"Inter", system-ui, sans-serif',
+      '::placeholder': { color: '#9ca3af' },
+      iconColor: '#7c3aed',
+    },
+    invalid: { color: '#ef4444', iconColor: '#ef4444' },
+  },
+}
+
+// Inner form that has access to Stripe hooks — must be inside <Elements>
+function StripeCardForm({ onTokenReady, disabled }) {
+  return (
+    <div className="space-y-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <Lock size={14} className="text-green-500" />
+        <span>Your payment info is secure and encrypted</span>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Card Details
+        </label>
+        <div className="input-luxury py-3">
+          <CardElement options={CARD_ELEMENT_OPTIONS} />
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5">
+          Test card: 4242 4242 4242 4242 · any future date · any 3-digit CVC
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Main checkout inner component — inside Elements provider
+function CheckoutInner() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const stripe = useStripe()
+  const elements = useElements()
   const { items, coupon } = useSelector((s) => s.cart)
   const { user } = useSelector((s) => s.auth)
   const { itemsTotal, shipping, tax, discount, total } = useSelector(selectCartTotal)
@@ -27,7 +72,6 @@ export default function CheckoutPage() {
     country: 'Pakistan',
     phone: user?.phone || '',
   })
-  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' })
 
   const handlePlaceOrder = async () => {
     setLoading(true)
@@ -44,23 +88,54 @@ export default function CheckoutPage() {
         couponCode: coupon?.code || '',
       }
 
+      // Create order on backend — returns order + clientSecret (for stripe)
       const res = await api.post('/orders', orderData)
-      const order = res.data.order
+      const { order, clientSecret } = res.data
 
-      // Simulate payment confirmation for demo
       if (paymentMethod === 'stripe') {
-        await api.put(`/orders/${order._id}/pay`, {
-          id: 'pi_demo_' + Date.now(),
-          status: 'succeeded',
-          update_time: new Date().toISOString(),
-          email_address: user.email,
+        if (!stripe || !elements) {
+          toast.error('Stripe is not ready. Please refresh.')
+          setLoading(false)
+          return
+        }
+
+        const cardElement = elements.getElement(CardElement)
+        if (!cardElement) {
+          toast.error('Card element not found. Please go back to Payment step.')
+          setLoading(false)
+          return
+        }
+
+        // Confirm payment with Stripe
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: { name: user.name, email: user.email },
+          },
         })
+
+        if (error) {
+          toast.error(error.message || 'Payment failed')
+          setLoading(false)
+          return
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+          // Confirm payment with our backend
+          await api.put(`/orders/${order._id}/pay`, {
+            id: paymentIntent.id,
+            status: paymentIntent.status,
+            update_time: new Date().toISOString(),
+            email_address: user.email,
+          })
+        }
       }
 
       dispatch(clearCart())
       toast.success('Order placed successfully!')
       navigate(`/order-success/${order._id}`)
     } catch (err) {
+      console.error('Order error:', err)
       toast.error(err.response?.data?.message || 'Failed to place order')
     } finally {
       setLoading(false)
@@ -123,7 +198,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => { if (!address.street || !address.city || !address.state || !address.zipCode || !address.phone) { toast.error('Fill all fields'); return } setStep(1) }}
+                  onClick={() => {
+                    if (!address.street || !address.city || !address.state || !address.zipCode || !address.phone) {
+                      toast.error('Fill all fields')
+                      return
+                    }
+                    setStep(1)
+                  }}
                   className="btn-gold mt-6 flex items-center gap-2"
                 >
                   Continue to Payment <ChevronRight size={16} />
@@ -140,7 +221,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3 mb-6">
                   {[
-                    { id: 'stripe', label: 'Credit / Debit Card', sub: 'Visa, Mastercard, Amex' },
+                    { id: 'stripe', label: 'Credit / Debit Card', sub: 'Visa, Mastercard, Amex — secured by Stripe' },
                     { id: 'cod', label: 'Cash on Delivery', sub: 'Pay when you receive' },
                   ].map((m) => (
                     <label key={m.id} className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
@@ -155,31 +236,9 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
+                {/* Real Stripe Card Element */}
                 {paymentMethod === 'stripe' && (
-                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                      <Lock size={14} className="text-green-500" />
-                      <span>Your payment info is secure and encrypted</span>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cardholder Name</label>
-                      <input value={cardDetails.name} onChange={(e) => setCardDetails({ ...cardDetails, name: e.target.value })} placeholder="Shahzaib Zaman" className="input-luxury" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Card Number</label>
-                      <input value={cardDetails.number} onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })} placeholder="4242 4242 4242 4242" maxLength="19" className="input-luxury" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Expiry</label>
-                        <input value={cardDetails.expiry} onChange={(e) => setCardDetails({ ...cardDetails, expiry: e.target.value })} placeholder="MM/YY" maxLength="5" className="input-luxury" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CVV</label>
-                        <input value={cardDetails.cvv} onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })} placeholder="•••" maxLength="4" className="input-luxury" type="password" />
-                      </div>
-                    </div>
-                  </div>
+                  <StripeCardForm disabled={loading} />
                 )}
 
                 <div className="flex gap-3 mt-6">
@@ -222,7 +281,7 @@ export default function CheckoutPage() {
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl p-4 border border-gray-100 dark:border-white/5">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment</p>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {paymentMethod === 'stripe' ? '💳 Credit/Debit Card' : '💵 Cash on Delivery'}
+                      {paymentMethod === 'stripe' ? '💳 Credit/Debit Card (Stripe)' : '💵 Cash on Delivery'}
                     </p>
                   </div>
                 </div>
@@ -231,10 +290,13 @@ export default function CheckoutPage() {
                   <button onClick={() => setStep(1)} className="btn-outline-gold flex-shrink-0">Back</button>
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={loading}
+                    disabled={loading || (paymentMethod === 'stripe' && !stripe)}
                     className="btn-gold flex items-center gap-2 flex-1 justify-center py-3.5 disabled:opacity-50"
                   >
-                    {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Place Order · PKR {total.toLocaleString()}</>}
+                    {loading
+                      ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      : <>Place Order · PKR {total.toLocaleString()}</>
+                    }
                   </button>
                 </div>
               </motion.div>
@@ -270,5 +332,14 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Wrap with Stripe Elements provider
+export default function CheckoutPage() {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutInner />
+    </Elements>
   )
 }
