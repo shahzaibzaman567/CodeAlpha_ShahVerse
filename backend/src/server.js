@@ -13,105 +13,94 @@ connectDB();
 
 const app = express();
 
-// Security headers
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// ── Security ──────────────────────────────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+}));
 
-// CORS
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://shahverse.vercel.app',
-  'https://code-alpha-shah-verse.vercel.app',
-];
+// ── CORS — open for all origins (Vercel monorepo + local dev) ─────────────────
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      // Allow any vercel.app subdomain
-      if (origin.endsWith('.vercel.app')) return callback(null, true);
-      // Allow localhost
-      if (origin.startsWith('http://localhost')) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
-
-// Rate limiting
+// ── Rate limiting ─────────────────────────────────────────────────────────────
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
 
-// Auth rate limit (stricter)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { success: false, message: 'Too many auth attempts, please try again later.' },
+  max: 30,
+  message: { success: false, message: 'Too many auth attempts.' },
 });
 app.use('/api/auth/', authLimiter);
 
-// Body parsers
+// ── Body parsers ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Logger
-if (process.env.NODE_ENV === 'development') {
+// ── Logger ────────────────────────────────────────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Health check
-app.get('/api/health', (req, res) => {
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'ShahVerse API is running',
-    environment: process.env.NODE_ENV,
+    message: '✨ ShahVerse API is running',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
   });
 });
 
-// API Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/categories', require('./routes/categoryRoutes'));
-app.use('/api/coupons', require('./routes/couponRoutes'));
-app.use('/api/newsletter', require('./routes/newsletterRoutes'));
-
-// Root
-app.get('/', (req, res) => {
-  res.json({
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
     success: true,
-    message: '✨ ShahVerse Fashion API',
-    version: '1.0.0',
-    docs: '/api/health',
+    message: 'ShahVerse API is healthy',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
   });
 });
 
-// 404 handler
+// ── API Routes ────────────────────────────────────────────────────────────────
+app.use('/api/auth',       require('./routes/authRoutes'));
+app.use('/api/products',   require('./routes/productRoutes'));
+app.use('/api/orders',     require('./routes/orderRoutes'));
+app.use('/api/users',      require('./routes/userRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/coupons',    require('./routes/couponRoutes'));
+app.use('/api/newsletter', require('./routes/newsletterRoutes'));
+
+// ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 
-// Error handler
+// ── Error handler ─────────────────────────────────────────────────────────────
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`\n🚀 ShahVerse API running on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 URL: http://localhost:${PORT}\n`);
-});
+// ── Start server (local only — Vercel uses module.exports) ───────────────────
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`\n🚀 ShahVerse API → http://localhost:${PORT}`);
+    console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+  });
+}
 
 module.exports = app;
