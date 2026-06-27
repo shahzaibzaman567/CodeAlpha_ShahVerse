@@ -4,6 +4,33 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, Users, ShoppingBag, DollarSign } from 'lucide-react'
 import api from '../../api/axios'
 
+// Theme-aware custom tooltip
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null
+  const isDark = document.documentElement.classList.contains('dark')
+  return (
+    <div style={{
+      background: isDark ? '#1a1a1a' : '#ffffff',
+      border: `1px solid ${isDark ? 'rgba(212,130,30,0.4)' : 'rgba(212,130,30,0.25)'}`,
+      borderRadius: '12px',
+      padding: '10px 14px',
+      boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(0,0,0,0.1)',
+      minWidth: '130px',
+    }}>
+      {label && <p style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: '11px', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>}
+      {payload.map((entry, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: i > 0 ? '4px' : 0 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
+          <span style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: '12px', textTransform: 'capitalize' }}>{entry.name}</span>
+          <span style={{ color: isDark ? '#ffffff' : '#111827', fontSize: '13px', fontWeight: 700, marginLeft: 'auto' }}>
+            {entry.name === 'revenue' ? `PKR ${Number(entry.value).toLocaleString()}` : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null)
   const [userStats, setUserStats] = useState(null)
@@ -28,8 +55,6 @@ export default function AdminAnalytics() {
     users: u.count,
   })) || []
 
-  const tooltipStyle = { background: '#1a1a1a', border: '1px solid rgba(212,130,30,0.2)', borderRadius: '12px', color: '#fff', fontSize: 12 }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Analytics</h1>
@@ -53,7 +78,6 @@ export default function AdminAnalytics() {
         ))}
       </div>
 
-      {/* Revenue chart */}
       <div className="bg-charcoal-800 rounded-2xl p-5 border border-white/5">
         <h3 className="text-white font-semibold mb-4">Revenue & Orders (Monthly)</h3>
         {revenueData.length > 0 ? (
@@ -63,10 +87,10 @@ export default function AdminAnalytics() {
               <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [n === 'revenue' ? `PKR ${v?.toLocaleString()}` : v, n]} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 12 }} />
-              <Bar yAxisId="left" dataKey="revenue" fill="#d4821e" radius={[6, 6, 0, 0]} name="Revenue" />
-              <Bar yAxisId="right" dataKey="orders" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Orders" />
+              <Bar yAxisId="left" dataKey="revenue" fill="#d4821e" radius={[6, 6, 0, 0]} name="revenue" />
+              <Bar yAxisId="right" dataKey="orders" fill="#3b82f6" radius={[6, 6, 0, 0]} name="orders" />
             </BarChart>
           </ResponsiveContainer>
         ) : <p className="text-gray-500 text-center py-10 text-sm">No revenue data yet. Start selling!</p>}
@@ -81,8 +105,8 @@ export default function AdminAnalytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
               <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Line type="monotone" dataKey="users" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: '#8b5cf6', r: 4 }} name="New Users" />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#8b5cf6', strokeDasharray: '4 4' }} />
+              <Line type="monotone" dataKey="users" stroke="#8b5cf6" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }} name="users" />
             </LineChart>
           </ResponsiveContainer>
         ) : <p className="text-gray-500 text-center py-10 text-sm">No user data yet</p>}
