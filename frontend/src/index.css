@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold: #d4821e;
+    --gold-light: #f5c842;
+    --dark: #1a1a1a;
+    --darker: #0f0f0f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-white dark:bg-charcoal-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(212, 130, 30, 0.3);
+    color: #d4821e;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0f0f0f; }
+  ::-webkit-scrollbar-thumb { background: #d4821e; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #f5c842; }
+
+  img { max-width: 100%; }
+}
+
+@layer components {
+  /* ── Buttons ──────────────────────────────────────────── */
+  .btn-gold {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500
+           hover:from-primary-500 hover:to-gold-400
+           text-white font-semibold px-6 py-3 rounded-full
+           transition-all duration-300 shadow-gold
+           hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0
+           select-none cursor-pointer inline-block text-center;
+  }
+
+  .btn-outline-gold {
+    @apply border border-primary-500 text-primary-500
+           hover:bg-primary-500 hover:text-white
+           font-semibold px-6 py-3 rounded-full
+           transition-all duration-300
+           select-none cursor-pointer inline-block text-center;
+  }
+
+  /* dark mode: btn-gold text always white */
+  .dark .btn-gold {
+    @apply text-white;
+  }
+
+  /* light mode: btn-gold text white */
+  .btn-gold {
+    color: #ffffff !important;
+  }
+
+  /* ── Cards ───────────────────────────────────────────── */
+  .card-glass {
+    @apply bg-white/10 dark:bg-white/5 backdrop-blur-xl
+           border border-white/20 dark:border-white/10 rounded-2xl;
+  }
+
+  .card-luxury {
+    @apply bg-white dark:bg-charcoal-800 rounded-2xl shadow-luxury
+           border border-gray-100 dark:border-white/5
+           transition-all duration-300 hover:-translate-y-1 hover:shadow-gold;
+  }
+
+  /* ── Inputs ──────────────────────────────────────────── */
+  .input-luxury {
+    @apply w-full bg-white dark:bg-charcoal-800
+           border border-gray-200 dark:border-white/10 rounded-xl
+           px-4 py-3 text-gray-900 dark:text-white
+           placeholder-gray-400 dark:placeholder-gray-600
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  /* ── Typography ──────────────────────────────────────── */
+  .section-title {
+    @apply font-display text-3xl sm:text-4xl md:text-5xl font-light
+           text-gray-900 dark:text-white;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 to-gold-400 bg-clip-text text-transparent;
+  }
+
+  /* ── Layout ──────────────────────────────────────────── */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ── Skeleton ────────────────────────────────────────── */
+  .shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  .dark .shimmer {
+    background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+  }
+
+  /* ── Misc ────────────────────────────────────────────── */
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #d4821e, transparent);
+  }
+}
+
+/* ── Mobile — prevent horizontal scroll ─────────────── */
+html, body { overflow-x: hidden; width: 100%; }
+
+/* ── Admin sidebar toggle knob ───────────────────────── */
+.left-5\.5 { left: 1.375rem; }
+
+/* ── Custom scrollbar (light) ────────────────────────── */
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(212,130,30,0.4); border-radius: 2px; }
+
+/* ── Page transitions ────────────────────────────────── */
+.page-enter { opacity: 0; transform: translateY(20px); }
+.page-enter-active { opacity: 1; transform: translateY(0); transition: opacity 400ms, transform 400ms; }
+.page-exit { opacity: 1; }
+.page-exit-active { opacity: 0; transition: opacity 200ms; }
+
