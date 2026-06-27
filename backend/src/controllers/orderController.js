@@ -96,15 +96,20 @@ const createOrder = asyncHandler(async (req, res) => {
   // Create Stripe Payment Intent if stripe payment
   let clientSecret = null;
   if (paymentMethod === 'stripe') {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalPrice), // PKR has no sub-unit, amount in rupees directly
-      currency: 'usd', // using usd for Stripe test compatibility (1 USD ~ symbolic)
-      metadata: { orderId: order._id.toString(), userId: req.user.id.toString() },
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-    });
-    order.stripePaymentIntentId = paymentIntent.id;
-    await order.save();
-    clientSecret = paymentIntent.client_secret;
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(totalPrice * 100),
+        currency: 'usd',
+        metadata: { orderId: order._id.toString(), userId: req.user.id.toString() },
+        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      });
+      order.stripePaymentIntentId = paymentIntent.id;
+      await order.save();
+      clientSecret = paymentIntent.client_secret;
+    } catch (stripeError) {
+      console.error('Stripe error:', stripeError.message);
+      // Continue without clientSecret — frontend will handle without Stripe Elements
+    }
   }
 
   res.status(201).json({
