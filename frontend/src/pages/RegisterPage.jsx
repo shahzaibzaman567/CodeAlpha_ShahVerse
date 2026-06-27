@@ -28,7 +28,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
-    dispatch(register({ name: form.name, email: form.email, password: form.password }))
+    const result = await dispatch(register({ name: form.name, email: form.email, password: form.password }))
+    if (!result.error) {
+      navigate('/login', { state: { registered: true, email: form.email } })
+    }
   }
 
   return (
