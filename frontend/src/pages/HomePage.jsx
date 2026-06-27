@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight, Play, Star, TrendingUp, Sparkles, Users, Package, Award } from 'lucide-react'
