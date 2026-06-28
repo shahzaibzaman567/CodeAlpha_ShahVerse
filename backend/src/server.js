@@ -26,8 +26,7 @@ const app = express();
 
 // ── Trust Proxy for Vercel / Reverse Proxy ───────────────────────────────────
 // express-rate-limit requires 'trust proxy' to be enabled when behind a proxy
-// (like Vercel, Cloudflare, AWS) to securely read the X-Forwarded-For header.
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 
 // ── Security ──────────────────────────────────────────────────────────────────
@@ -54,6 +53,7 @@ app.use('/api/', rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }, // Prevent crashing if Vercel proxy configuration misaligns
 }));
 
 // ── Body Parsers ──────────────────────────────────────────────────────────────
