@@ -24,6 +24,12 @@ const dbMiddleware = async (req, res, next) => {
 
 const app = express();
 
+// ── Trust Proxy for Vercel / Reverse Proxy ───────────────────────────────────
+// express-rate-limit requires 'trust proxy' to be enabled when behind a proxy
+// (like Vercel, Cloudflare, AWS) to securely read the X-Forwarded-For header.
+app.set('trust proxy', 1);
+
+
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
