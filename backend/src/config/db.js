@@ -1,9 +1,23 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// ── Bypassing ISP DNS Timeouts locally ─────────────────────────────────────────
+// Some ISP DNS servers fail or timeout when resolving Atlas replica sets.
+// We override it with Google DNS for local development only.
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
+    console.log('🌐 Local DNS Override: Using Google DNS (8.8.8.8) to connect to Atlas.');
+  } catch (err) {
+    console.warn('⚠️ DNS override failed:', err.message);
+  }
+}
 
 // ── CRITICAL: Disable Mongoose buffering GLOBALLY before any models are loaded ──
 // Without this, pre-compiled models still buffer queries for 10s then time out.
 // With this, a failed/missing DB connection throws immediately with a clear error.
 mongoose.set('bufferCommands', false);
+
 
 // Cache the connection across Vercel serverless warm invocations
 let cached = global.mongoose;
