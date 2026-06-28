@@ -5,8 +5,11 @@ const crypto = require('crypto');
 // Helper: send token response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
+  
+  // Safe default to 30 days if JWT_COOKIE_EXPIRE is not defined or is not a valid number
+  const cookieDays = Number(process.env.JWT_COOKIE_EXPIRE) || 30;
   const options = {
-    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + cookieDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -42,12 +45,17 @@ const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Email already registered' });
   }
 
-  const user = await User.create({ name, email, password });
-  user.lastLogin = Date.now();
-  await user.save({ validateBeforeSave: false });
+  // Create user in a single save round-trip with lastLogin set to now
+  const user = await User.create({
+    name,
+    email,
+    password,
+    lastLogin: Date.now()
+  });
 
   sendTokenResponse(user, 201, res);
 });
+
 
 // @desc  Login user
 // @route POST /api/auth/login
