@@ -1,31 +1,46 @@
 const mongoose = require('mongoose');
 
-// Cache connection for Vercel serverless warm reuse
+// ── CRITICAL: Disable Mongoose buffering GLOBALLY before any models are loaded ──
+// Without this, pre-compiled models still buffer queries for 10s then time out.
+// With this, a failed/missing DB connection throws immediately with a clear error.
+mongoose.set('bufferCommands', false);
+
+// Cache the connection across Vercel serverless warm invocations
 let cached = global.mongoose;
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
 const connectDB = async () => {
-  // Return cached connection if available and still connected
+  // Reuse existing connected instance
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
   if (!process.env.MONGO_URI) {
-    throw new Error('MONGO_URI environment variable is not set');
+    throw new Error(
+      'MONGO_URI is not set. Add it to Vercel Environment Variables.'
+    );
+  }
+
+  // Validate URI format — Vercel requires mongodb+srv://, not mongodb://
+  if (process.env.MONGO_URI.startsWith('mongodb://') && process.env.MONGO_URI.includes(':27017')) {
+    console.warn(
+      '⚠️  MONGO_URI uses old shard format (mongodb://...27017). ' +
+      'Vercel blocks port 27017. Use mongodb+srv:// from Atlas → Connect → Drivers.'
+    );
   }
 
   if (!cached.promise) {
     const opts = {
-      // Vercel functions have a 10s default timeout — keep DB handshake under that
-      serverSelectionTimeoutMS: 8000,
-      socketTimeoutMS: 8000,
-      connectTimeoutMS: 8000,
+      // Keep all timeouts well under Vercel's 30s maxDuration
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
       maxPoolSize: 10,
-      minPoolSize: 1,
-      bufferCommands: false, // Fail fast when disconnected (don't queue ops)
     };
+
+    console.log('🔌 Connecting to MongoDB...');
 
     cached.promise = mongoose
       .connect(process.env.MONGO_URI, opts)
@@ -34,10 +49,11 @@ const connectDB = async () => {
         return conn;
       })
       .catch((err) => {
-        // Reset so the next request can retry
+        // Reset cache so next request retries
         cached.promise = null;
         cached.conn = null;
-        console.error(`❌ MongoDB Error: ${err.message}`);
+        console.error(`❌ MongoDB Connection Error: ${err.message}`);
+        console.error(`   URI starts with: ${process.env.MONGO_URI?.substring(0, 30)}...`);
         throw err;
       });
   }
@@ -54,3 +70,4 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
+
