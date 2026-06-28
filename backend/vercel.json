@@ -6,10 +6,15 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "src/server.js"
+      "source": "/(.*)",
+      "destination": "src/server.js"
     }
-  ]
+  ],
+  "functions": {
+    "src/server.js": {
+      "maxDuration": 30
+    }
+  }
 }

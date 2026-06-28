@@ -3,7 +3,7 @@ const asyncHandler = require('express-async-handler');
 
 const getCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find({ isActive: true })
-    .populate('productCount')
+    .populate({ path: 'productCount' })
     .sort('sortOrder');
   res.status(200).json({ success: true, categories });
 });

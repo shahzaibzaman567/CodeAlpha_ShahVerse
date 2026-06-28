@@ -2,10 +2,9 @@ const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log to console in dev
-  if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error:', err);
-  }
+  // Always log — Vercel function logs are the only way to debug 500s in production
+  console.error('❌ Error:', err.message);
+  if (err.stack) console.error(err.stack);
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
