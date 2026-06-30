@@ -1,3 +1,6 @@
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/1685392c-4fde-407d-952c-9eee8a0290e5" />
+
+
 # ShahVerse — Premium Fashion E-Commerce
 
 > **CodeAlpha Task 1** — Full-Stack E-Commerce Platform
@@ -11,7 +14,7 @@ A premium full-stack fashion e-commerce platform built with the MERN stack.
 | Service | URL |
 |---------|-----|
 | Frontend | _Deploy to Vercel_ |
-| Backend API | _Deploy to Vercel_ |
+| Backend API | https://code-alpha-shah-verse.vercel.app |
 
 ---
 
