@@ -10,8 +10,7 @@ const userFromStorage = localStorage.getItem('shahverse_user')
 export const register = createAsyncThunk('auth/register', async (data, { rejectWithValue }) => {
   try {
     const res = await api.post('/auth/register', data)
-    localStorage.setItem('shahverse_user', JSON.stringify(res.data.user))
-    localStorage.setItem('shahverse_token', res.data.token)
+    // Removed auto login local storage saving so user must sign in manually
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Registration failed')
@@ -73,9 +72,8 @@ const authSlice = createSlice({
       .addCase(register.pending, (state) => { state.loading = true; state.error = null })
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload.user
-        state.token = action.payload.token
-        toast.success(`Welcome to ShahVerse, ${action.payload.user.name}!`)
+        // Removed state.user and state.token assignment to prevent auto-login
+        toast.success(`Registration successful! Please login.`)
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false; state.error = action.payload

@@ -39,7 +39,7 @@ export default function RegisterPage() {
       {/* Left Visual */}
       <div className="hidden lg:block flex-1 relative overflow-hidden">
         <img
-          src="https://st2.depositphotos.com/2895903/11203/i/950/depositphotos_112036752-stock-photo-young-trendy-man-and-woman.jpg"
+          src="https://i.pinimg.com/originals/93/a6/e4/93a6e401c99aa9057455926e1234d353.png"
           alt="Fashion"
           className="w-full h-full object-cover"
         />
