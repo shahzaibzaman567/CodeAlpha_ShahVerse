@@ -13,7 +13,7 @@ A premium full-stack fashion e-commerce platform built with the MERN stack.
 
 | Service | URL |
 |---------|-----|
-| Frontend | _Deploy to Vercel_ |
+| Frontend | https://code-alpha-shah-verse-frontend.vercel.app |
 | Backend API | https://code-alpha-shah-verse.vercel.app |
 
 ---
