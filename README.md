@@ -106,7 +106,7 @@ node src/utils/seeder.js
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | shahzaibzaman465@gmail.com | admin123 |
+| Admin | admin@gmail.com | admin123 |
 | User | user@shahverse.com | user123456 |
 
 ---
